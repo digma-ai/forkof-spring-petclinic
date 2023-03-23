@@ -1,0 +1,23 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="PetClinic - with OTEL agent + Digma extension" type="Application" factoryName="Application">
+    <option name="ALTERNATIVE_JRE_PATH" value="17" />
+    <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="true" />
+    <envs>
+      <env name="CODE_PACKAGE_PREFIXES" value="org.springframework.samples.petclinic" />
+      <env name="OTEL_SERVICE_NAME" value="PetClinicWithAgent" />
+      <env name="OTEL_RESOURCE_ATTRIBUTES" value="deployment.environment=Integration,digma.environment=Integration" />
+    </envs>
+    <option name="MAIN_CLASS_NAME" value="org.springframework.samples.petclinic.PetClinicApplication" />
+    <module name="spring-petclinic-otel-with-digma-agent.main" />
+    <option name="VM_PARAMETERS" value="-javaagent:build/otel/opentelemetry-javaagent.jar -Dotel.javaagent.extensions=build/otel/digma-otel-agent-extension.jar -Dotel.traces.exporter=otlp -Dotel.exporter.otlp.traces.endpoint=http://localhost:5050" />
+    <extension name="coverage">
+      <pattern>
+        <option name="PATTERN" value="org.springframework.samples.petclinic.*" />
+        <option name="ENABLED" value="true" />
+      </pattern>
+    </extension>
+    <method v="2">
+      <option name="Gradle.BeforeRunTask" enabled="true" tasks="bootJar" externalProjectPath="$PROJECT_DIR$" vmOptions="" scriptParameters="" />
+    </method>
+  </configuration>
+</component>
