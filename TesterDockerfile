@@ -1,0 +1,18 @@
+FROM eclipse-temurin:17-jre
+EXPOSE 9753
+
+ENV OTEL_SERVICE_NAME=PetClinic
+ENV OTEL_EXPORTER_OTLP_ENDPOINT=http://host.docker.internal:5050
+ENV OTEL_LOGS_EXPORTER=otlp
+ENV OTEL_METRICS_EXPORTER=none
+
+ENV PETSHOP_URL=http://host.docker.internal:9753
+
+ENV CODE_PACKAGE_PREFIXES="org.springframework.samples.petclinic"
+ENV DEPLOYMENT_ENV="SAMPLE_ENV"
+
+ADD build/libs/spring-petclinic-*.jar /app.jar
+ADD build/otel/opentelemetry-javaagent.jar /opentelemetry-javaagent.jar
+ADD build/otel/digma-otel-agent-extension.jar /digma-otel-agent-extension.jar
+
+ENTRYPOINT java -cp app.jar -javaagent:/opentelemetry-javaagent.jar -Dotel.javaagent.extensions=/digma-otel-agent-extension.jar -Dloader.main=petclinic.client.ClientTester org.springframework.boot.loader.PropertiesLauncher

@@ -1,0 +1,52 @@
+# Use the latest 2.1 version of CircleCI pipeline process engine.
+# See: https://circleci.com/docs/configuration-reference
+version: 2.1
+
+# Define a job to be invoked later in a workflow.
+# See: https://circleci.com/docs/configuration-reference/#jobs
+jobs:
+  sanity-validation:
+    # Specify the execution environment. You can specify an image from Docker Hub or use one of our convenience images from CircleCI's Developer Hub.
+    # See: https://circleci.com/docs/configuration-reference/#executor-job
+#    docker:
+#      - image: cimg/base:stable
+    machine:
+      image: ubuntu-2004:2023.02.1
+      resource_class: large
+    # Add steps to the job
+    # See: https://circleci.com/docs/configuration-reference/#steps
+    steps:
+      - checkout
+      - run:
+          name: "Set up Java"
+          command: |
+            sudo apt update
+            sudo apt install openjdk-17-jdk openjdk-17-jre
+            sudo update-alternatives --install /usr/bin/java java /usr/lib/jvm/java-17-openjdk-amd64/bin/java 3
+            sudo update-alternatives --set java /usr/lib/jvm/java-17-openjdk-amd64/bin/java
+      - run:
+          name: "Run bootJar"
+          command: |
+            ./gradlew bootJar
+      - run:
+          name: "Run App"
+          command: |
+            export JAVA_TOOL_OPTIONS="-javaagent:./build/otel/opentelemetry-javaagent.jar -Dotel.exporter.otlp.endpoint=${DIGMA_URL} -Dotel.javaagent.extensions=./build/otel/digma-otel-agent-extension.jar"
+            export OTEL_SERVICE_NAME=petshop-clinic-app
+            export DEPLOYMENT_ENV=INTEGRATION_TESTS
+            java -jar ./build/libs/spring-petclinic-3.0.0.jar &
+      - run:
+          name: "Wait for app to be up"
+          command: |
+            timeout 22 sh -c 'until nc -z $0 $1; do sleep 1; done' localhost 9753
+      - run:
+          name: "Run some sanity tests"
+          command: |
+            java -cp ./build/libs/spring-petclinic-3.0.0.jar -Dloader.main=petclinic.client.ClientTester org.springframework.boot.loader.PropertiesLauncher
+
+# Orchestrate jobs using workflows
+# See: https://circleci.com/docs/configuration-reference/#workflows
+workflows:
+  pr-test-workflow:
+    jobs:
+      - sanity-validation
